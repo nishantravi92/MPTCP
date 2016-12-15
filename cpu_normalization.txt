@@ -1,11 +1,6 @@
-Y axis: Normalized CPU Usage
 freq * Utilization / Fmax every row now
-Y axis 0-1
-Graph X axis label make MP-LTE, MP-WiFi, WiFi, LTE 
-Only 1 graph now.
-Reduce margin on both sides.
-Black And White with shading, No color. ( Check Marker with Shading Matlab for idea )
-Hatch '/', '-', '\', '|'
 root@hammerhead:/sys/devices/system/cpu/cpu0/cpufreq
 root@hammerhead:/sys/devices/system/cpu/cpu0/cpufreq # cat scaling_governor "This value should be Ondemand".
 If not then echo ondemand > scaling_governorr
+
+/* File */
