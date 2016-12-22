@@ -58,6 +58,7 @@ def generate_plot(values, y_axis_label, filename):
 
 #Creates a matrix of required dimension m x n
 def create_matrix(m, n):
+
 	matrix = []
 	for i in range(0, m):
 		matrix.append([])
@@ -65,38 +66,42 @@ def create_matrix(m, n):
 			matrix[i].append(0)
 	return matrix
 
-# Returns a timedelta object
-def convert_time_stamps_with_starting_time(time_stamp, start_time):
-	return datetime.strptime(time_stamp, "%H:%M:%S.%f") - datetime.strptime(start_time, "%H:%M:%S.%f")
 
-def time_in_between(absolute_time, start_and_end_time):
-	start_time = int(start_and_end_time[0].split('.')[0]*1000000) + int(start_and_end_time[0].split('.')[1])
-	end_time =   start_and_end_time[1].split('.')[0]*1000000 + start_and_end_time[1].split('.')[1]
-	if absolute_time.microseconds >= start_time and absolute_time <= end_time:
+#Checks if a time is between two times and returns a boolean value
+def time_in_between(time_to_check, start_and_end_time):
+
+	start = datetime.datetime.strptime(start_and_end_time[0], '%H:%M').time()
+	end = datetime.datetime.strptime(start_and_end_time[1], '%H:%M').time()
+	time_to_check = datetime.datetime.strptime(time_to_check, '%H:%M').time()
+	if time_to_check >= start and time_to_check <= end:
 		return True
 	return False
 
-def time_greater_than(absolute_time, start_and_end_time):
-	end_time =   start_and_end_time[1].split('.')[0]*1000000 + start_and_end_time[1].split('.')[1]
-	if absolute_time > end_time:
+#Checks if a time is greater than the end time.
+def time_greater_than(time_to_check, start_and_end_time):
+
+	time_to_check = datetime.datetime.strptime(time_to_check, '%H:%M').time()
+	end = datetime.datetime.strptime(start_and_end_time[1], '%H:%M').time()
+	if time_to_check > end:
 		return True
 	return False
+
 
 """ Start times will be a file with a list of the start times for each run for an app, so in total 20
-	runs. tcp_files will contain 20 files with the format n lines of start_ts, end_ts"""
-def create_averages_of_runs(cpu_files, mypath, columns, tcp_files, start_times):
-# TODO Get right path for files
+	runs. time_files will contain 20 files with the format n lines of start_ts, end_ts"""
+def create_averages_of_runs(cpu_files, mypath, columns, time_files):
+
 	data = create_matrix(4,4)
 	count = 0
 	num_of_lines = 0
 	for i in range(0, len(cpu_files)):
 		cpu_files[i] = mypath + '/' + cpu_files[i]
-		tcp_files[i] = mypath + '/' + tcp_files[i]
+		time_files[i] = mypath + '/' + time_files[i]
 
 	for z, file in enumerate(cpu_files):
 		print cpu_files[z]
 		time_counter = 0
-		with open(file) as f, open(tcp_files[z]) as t:
+		with open(file) as f, open(time_files[z]) as t:
 			lines  = f.readlines()
 			times = t.readLines()
 			num_of_lines  = 0
@@ -106,15 +111,14 @@ def create_averages_of_runs(cpu_files, mypath, columns, tcp_files, start_times):
 				if time_counter >= len(times):
 					continue
 				start_and_end_time = times[time_counter].split(' ')	
-							
-				absolute_time = convert_time_stamps_with_starting_time(line[0], start_times[z])
-				if len(line) == 9 and time_in_between(absolute_time, start_and_end_time):     
+
+				if len(line) == 9 and time_in_between(line[0], start_and_end_time):     
 					cpu0 += float(line[columns[0][0]])*float(line[columns[1][0]])/float(2265600)
 					cpu1 += float(line[columns[0][1]])*float(line[columns[1][1]])/float(2265600)
 					cpu2 += float(line[columns[0][2]])*float(line[columns[1][2]])/float(2265600)
 					cpu3 += float(line[columns[0][3]])*float(line[columns[1][3]])/float(2265600)
 					num_of_lines += 1
-				elif time_greater_than(absolute_time, start_and_end_time):
+				elif time_greater_than(times[0], start_and_end_time):
 					time_counter += 1		
 
 			data[0][count/5] += cpu0/float(num_of_lines)			# Divide total by number and add it to data
@@ -139,13 +143,12 @@ indexes = [ [1, 2, 3, 4],
 			[5, 6, 7, 8]
 		  ]
 for i in range(0, len(apps)):
-	mypath = '/Users/nishantr/Downloads/Graphs/gw_gl (kenmore)/'+ apps[i] +'/cpu'
+	mypath = sys.argv[1] + apps[i] +'/cpu'
 	mtime = lambda f: os.stat(os.path.join(mypath, f)).st_mtime
 	files = list(sorted(os.listdir(mypath), key=mtime))
 	tcp_files = list(sorted(os.listdir(mypath)))
 	#files.sort()
 	for i in range(0, len(files), 20):						#Take batch of 20 files to parse for an application
-		data = create_averages_of_runs(files[i:i+20], mypath, indexes, [], [])
+		data = create_averages_of_runs(files[i:i+20], mypath, indexes, [])
 		generate_plot(data, y_axes, mypath.split('/')[-2]+'_' + y_axes)
-		print_matrix(data)
-				
+		print_matrix(data)		
